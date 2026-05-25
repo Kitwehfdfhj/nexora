@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>NEXORA | Admin Panel</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#070b14;
+color:white;
+overflow-x:hidden;
+}
+
+/* HEADER */
+
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:20px;
+background:rgba(15,22,41,.9);
+backdrop-filter:blur(20px);
+position:sticky;
+top:0;
+z-index:100;
+border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+.logo{
+font-size:25px;
+font-weight:bold;
+background:
+linear-gradient(90deg,#00bfff,#7a00ff);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+
+nav{
+display:flex;
+gap:10px;
+}
+
+nav a{
+color:white;
+text-decoration:none;
+background:#151d2f;
+padding:10px 15px;
+border-radius:12px;
+transition:.3s;
+}
+
+nav a:hover{
+background:#1b2640;
+transform:translateY(-2px);
+}
+
+/* CONTAINER */
+
+.container{
+max-width:950px;
+margin:auto;
+padding:20px;
+}
+
+/* CARD */
+
+.card{
+background:#151d2f;
+padding:22px;
+border-radius:22px;
+margin-bottom:22px;
+box-shadow:0 0 20px rgba(0,0,0,.25);
+}
+
+/* TITLES */
+
+.card h2{
+margin-bottom:15px;
+}
+
+/* INPUTS */
+
+input,
+textarea{
+width:100%;
+padding:13px;
+margin-top:10px;
+margin-bottom:12px;
+border:none;
+border-radius:12px;
+background:#0f1629;
+color:white;
+outline:none;
+font-size:14px;
+}
+
+textarea{
+height:120px;
+resize:none;
+}
+
+/* BUTTON */
+
+button{
+padding:12px 18px;
+border:none;
+border-radius:12px;
+cursor:pointer;
+background:
+linear-gradient(135deg,#00bfff,#7a00ff);
+color:white;
+font-weight:bold;
+transition:.3s;
+}
+
+button:hover{
+transform:translateY(-2px);
+box-shadow:0 0 15px rgba(0,191,255,.35);
+}
+
+.deleteBtn{
+background:#ff004c;
+}
+
+/* ARTICLE */
+
+.article{
+background:#0f1629;
+padding:16px;
+border-radius:14px;
+margin-top:12px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:15px;
+flex-wrap:wrap;
+}
+
+/* STATS */
+
+.stats{
+display:grid;
+grid-template-columns:
+repeat(auto-fit,minmax(180px,1fr));
+gap:15px;
+margin-bottom:20px;
+}
+
+.stat{
+background:#151d2f;
+padding:20px;
+border-radius:20px;
+text-align:center;
+}
+
+.stat h3{
+font-size:28px;
+margin-bottom:8px;
+color:#00bfff;
+}
+
+/* TOAST */
+
+.toast{
+position:fixed;
+bottom:20px;
+left:50%;
+transform:translateX(-50%);
+background:#1e293b;
+padding:12px 20px;
+border-radius:12px;
+display:none;
+z-index:9999;
+}
+
+/* MOBILE */
+
+@media(max-width:700px){
+
+header{
+flex-direction:column;
+gap:12px;
+}
+
+nav{
+width:100%;
+justify-content:center;
+flex-wrap:wrap;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<div class="logo">
+NEXORA
+</div>
+
+<nav>
+
+<a href="home.html">
+Home
+</a>
+
+<a href="profile.html">
+Profile
+</a>
+
+</nav>
+
+</header>
+
+<div class="container">
+
+<!-- STATS -->
+
+<div class="stats">
+
+<div class="stat">
+
+<h3 id="articlesCount">
+0
+</h3>
+
+<p>
+Articles
+</p>
+
+</div>
+
+<div class="stat">
+
+<h3 id="verifiedCount">
+0
+</h3>
+
+<p>
+Verified Users
+</p>
+
+</div>
+
+</div>
+
+<!-- PUBLISH -->
+
+<div class="card">
+
+<h2>
+Publish Article
+</h2>
+
+<input
+id="title"
+placeholder="Article Title">
+
+<input
+id="category"
+placeholder="Category">
+
+<textarea
+id="description"
+placeholder="Description"></textarea>
+
+<input
+id="image"
+placeholder="Image URL">
+
+<button onclick="publish()">
+Publish
+</button>
+
+</div>
+
+<!-- VERIFY -->
+
+<div class="card">
+
+<h2>
+Verify User
+</h2>
+
+<input
+id="verifyEmail"
+placeholder="User Email">
+
+<button onclick="verifyUser()">
+
+Add Blue Badge
+
+</button>
+
+</div>
+
+<!-- ARTICLES -->
+
+<div class="card">
+
+<h2>
+Articles
+</h2>
+
+<div id="articles"></div>
+
+</div>
+
+</div>
+
+<!-- TOAST -->
+
+<div class="toast"
+id="toast">
+
+Done
+
+</div>
+
+<script type="module">
+
+/* FIREBASE */
+
+import { initializeApp }
+
+from
+"https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+
+import {
+
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc
+
+}
+
+from
+"https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+import {
+
+getAuth,
+onAuthStateChanged
+
+}
+
+from
+"https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+/* CONFIG */
+
+const firebaseConfig = {
+  
+  apiKey: "AIzaSyDLSOZogDC_f23jnybhYpH_MNVCnVHeU50",
+  
+  authDomain: "nexora-cdf18.firebaseapp.com",
+  
+  projectId: "nexora-cdf18",
+  
+  storageBucket: "nexora-cdf18.appspot.com",
+  
+  messagingSenderId: "610110841134",
+  
+  appId: "1:610110841134:web:86985a639f4f5139315abf"
+  
+};
+
+const app =
+initializeApp(firebaseConfig);
+
+const db =
+getFirestore(app);
+
+const auth =
+getAuth(app);
+
+/* ADMIN EMAIL */
+
+const ADMIN_EMAIL =
+"wa037081@gmail.com";
+
+/* TOAST */
+
+function showToast(text){
+
+const toast =
+document.getElementById("toast");
+
+toast.innerText = text;
+
+toast.style.display = "block";
+
+setTimeout(()=>{
+
+toast.style.display = "none";
+
+},2000);
+
+}
+
+/* CHECK ADMIN */
+
+onAuthStateChanged(auth,
+
+async(user)=>{
+
+if(!user){
+
+window.location.href =
+"index.html";
+
+return;
+
+}
+
+if(user.email !== ADMIN_EMAIL){
+
+alert("Not Allowed");
+
+window.location.href =
+"home.html";
+
+return;
+
+}
+
+loadArticles();
+
+loadVerifiedCount();
+
+});
+
+/* PUBLISH ARTICLE */
+
+window.publish =
+async function(){
+
+const title =
+document.getElementById("title")
+.value;
+
+const category =
+document.getElementById("category")
+.value;
+
+const desc =
+document.getElementById("description")
+.value;
+
+const image =
+document.getElementById("image")
+.value;
+
+if(!title || !category || !desc){
+
+alert("Fill all fields");
+
+return;
+
+}
+
+try{
+
+await addDoc(
+
+collection(db,"news"),
+
+{
+
+title:title,
+category:category,
+desc:desc,
+mediaUrl:image,
+time:Date.now()
+
+}
+
+);
+
+showToast("Article Published");
+
+location.reload();
+
+}catch(error){
+
+alert(error.message);
+
+console.log(error);
+
+}
+
+};
+
+/* VERIFY USER */
+
+window.verifyUser =
+async function(){
+
+const email =
+document.getElementById("verifyEmail")
+.value.trim();
+
+if(!email){
+
+alert("Enter Email");
+
+return;
+
+}
+
+try{
+
+await addDoc(
+
+collection(db,"verifiedUsers"),
+
+{
+
+email:email,
+verified:true,
+time:Date.now()
+
+}
+
+);
+
+showToast("Blue Badge Added");
+
+document
+.getElementById("verifyEmail")
+.value = "";
+
+loadVerifiedCount();
+
+}catch(error){
+
+alert(error.message);
+
+console.log(error);
+
+}
+
+};
+
+/* VERIFIED COUNT */
+
+async function loadVerifiedCount(){
+
+const snap =
+await getDocs(
+
+collection(db,"verifiedUsers")
+
+);
+
+document
+.getElementById("verifiedCount")
+.innerText =
+snap.size;
+
+}
+
+/* LOAD ARTICLES */
+
+async function loadArticles(){
+
+const container =
+document.getElementById("articles");
+
+container.innerHTML = "";
+
+const snap =
+await getDocs(
+
+collection(db,"news")
+
+);
+
+document
+.getElementById("articlesCount")
+.innerText =
+snap.size;
+
+snap.forEach((d)=>{
+
+const data =
+d.data();
+
+container.innerHTML += `
+
+<div class="article">
+
+<div>
+
+<b>
+${data.title}
+</b>
+
+<br>
+
+<small>
+${data.category}
+</small>
+
+</div>
+
+<button
+class="deleteBtn"
+onclick="deleteArticle('${d.id}')">
+
+Delete
+
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+
+/* DELETE */
+
+window.deleteArticle =
+async function(id){
+
+if(confirm("Delete Article?")){
+
+await deleteDoc(
+
+doc(db,"news",id)
+
+);
+
+location.reload();
+
+}
+
+};
+
+</script>
+
+</body>
+
+</html>
